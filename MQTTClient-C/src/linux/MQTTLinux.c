@@ -104,7 +104,10 @@ int linux_write(Network* n, unsigned char* buffer, int len, int timeout_ms)
 	return rc;
 }
 
-
+/**
+ * Linux 平台的网络初始化，注册mqttread, mqttwrite 的回调函数分别是 linux_read(), linux_write()
+ * @param n 抽象化的结构体，代表网络连接和输入输出回调函数
+ */
 void NetworkInit(Network* n)
 {
 	n->my_socket = 0;
@@ -112,7 +115,13 @@ void NetworkInit(Network* n)
 	n->mqttwrite = linux_write;
 }
 
-
+/**
+ * 建立网络连接到指定的服务器IP地址和端口
+ * @param  n    抽象化的代表网络套接字的实体
+ * @param  addr 服务器地址，可以是 dev.sgw.m2m.rootcloud.com 也可以是 123.206.2.200
+ * @param  port 服务器端口号
+ * @return      成功返回0，失败返回-1。
+ */
 int NetworkConnect(Network* n, char* addr, int port)
 {
 	int type = SOCK_STREAM;

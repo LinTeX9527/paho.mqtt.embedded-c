@@ -102,18 +102,22 @@ typedef struct MQTTSubackData
 
 typedef void (*messageHandler)(MessageData*);
 
+/**
+ * MQTTClient 结构体，包含客户端状态信息、控制信息、缓冲区指针，
+ * 接收服务器publish消息的回调函数指针，网络套接字指针
+ */
 typedef struct MQTTClient
 {
-    unsigned int next_packetid,
-      command_timeout_ms;
-    size_t buf_size,
-      readbuf_size;
-    unsigned char *buf,
-      *readbuf;
-    unsigned int keepAliveInterval;
-    char ping_outstanding;
-    int isconnected;
-    int cleansession;
+    unsigned int next_packetid;       // 下一帧的ID
+    unsigned int command_timeout_ms;  // 命令超时时间，以毫秒为单位
+    size_t buf_size;                  // 写buff的大小
+    size_t readbuf_size;              // 读buff的大小
+    unsigned char *buf;               // 写buff的起始指针
+    unsigned char *readbuf;           // 读buff的起始指针
+    unsigned int keepAliveInterval;   // 心跳包间隔时间，以秒为单位
+    char ping_outstanding;            // ping 结果是否超时的标志，1--超时，即未收到PINGRESP；0--未超时，收到PINGRESP
+    int isconnected;                  // 状态标志，是否连接到服务器
+    int cleansession;                 // 状态标志，是否清除会话
 
     struct MessageHandlers
     {

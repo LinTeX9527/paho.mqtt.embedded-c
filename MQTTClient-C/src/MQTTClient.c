@@ -54,11 +54,21 @@ static int sendPacket(MQTTClient* c, int length, Timer* timer)
 }
 
 
+/**
+ * 挂载网络实例到 MQTTClient 上，并且初始化缓冲区资源，客户端参数等信息
+ * @param c                  MQTTClient 指针
+ * @param network            Network 指针
+ * @param command_timeout_ms 命令超时时间，以毫秒为单位
+ * @param sendbuf            发送命令的缓冲区，需要开发者提前分配
+ * @param sendbuf_size       发送命令的缓冲区大小
+ * @param readbuf            接收命令的缓冲区，需要开发者提前分配
+ * @param readbuf_size       接受命令的缓冲区大小
+ */
 void MQTTClientInit(MQTTClient* c, Network* network, unsigned int command_timeout_ms,
 		unsigned char* sendbuf, size_t sendbuf_size, unsigned char* readbuf, size_t readbuf_size)
 {
     int i;
-    c->ipstack = network;
+    c->ipstack = network;   // 挂载网络实例到 MQTTClient上
 
     for (i = 0; i < MAX_MESSAGE_HANDLERS; ++i)
         c->messageHandlers[i].topicFilter = 0;

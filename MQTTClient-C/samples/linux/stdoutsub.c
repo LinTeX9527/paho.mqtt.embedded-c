@@ -50,10 +50,12 @@
 
 #include <sys/time.h>
 
-
+// 当 toStop == 1 时结束当前程序
 volatile int toStop = 0;
 
-
+/**
+ * 打印此例程的命令行启动参数
+ */
 void usage()
 {
 	printf("MQTT stdout subscriber\n");
@@ -69,38 +71,48 @@ void usage()
 	exit(-1);
 }
 
-
+/**
+ * 在Linux环境下收到kill -9信号或者Ctrl-C的处理函数
+ * @param sig 注册的信号
+ */
 void cfinish(int sig)
 {
 	signal(SIGINT, NULL);
 	toStop = 1;
 }
 
-
+/**
+ * 声明一个结构体类型，并且定义一个全局变量 opts ，包含此客户端相关的信息：clientid, username, password, host, port
+ */
 struct opts_struct
 {
-	char* clientid;
-	int nodelimiter;
-	char* delimiter;
-	enum QoS qos;
-	char* username;
-	char* password;
-	char* host;
-	int port;
-	int showtopics;
+	char* clientid;		// 客户端唯一标志
+	int nodelimiter;	// 分隔符1
+	char* delimiter;	// 分隔符2
+	enum QoS qos;		// QoS 参数
+	char* username;		// 用户名字
+	char* password;		// 用户密码
+	char* host;			// 服务器IP地址
+	int port;			// 服务器端口号
+	int showtopics;		// 如果为真则打印参数信息
 } opts =
 {
 	(char*)"stdout-subscriber", 0, (char*)"\n", QOS2, NULL, NULL, (char*)"localhost", 1883, 0
 };
 
 
+/**
+ * 分析命令行传递进来的参数，并且填充到全局变量 opts 中
+ * @param argc 命令行参数个数
+ * @param argv 命令行参数数组指针
+ */
 void getopts(int argc, char** argv)
 {
 	int count = 2;
 	
 	while (count < argc)
 	{
-		if (strcmp(argv[count], "--qos") == 0)
+		if (strcmp(argv[count], "--qos") == 0) // 设定QoS级别
 		{
 			if (++count < argc)
 			{
@@ -116,49 +128,49 @@ void getopts(int argc, char** argv)
 			else
 				usage();
 		}
-		else if (strcmp(argv[count], "--host") == 0)
+		else if (strcmp(argv[count], "--host") == 0) 	// 设定服务器IP地址
 		{
 			if (++count < argc)
 				opts.host = argv[count];
 			else
 				usage();
 		}
-		else if (strcmp(argv[count], "--port") == 0)
+		else if (strcmp(argv[count], "--port") == 0)	// 设定服务器端口号
 		{
 			if (++count < argc)
 				opts.port = atoi(argv[count]);
 			else
 				usage();
 		}
-		else if (strcmp(argv[count], "--clientid") == 0)
+		else if (strcmp(argv[count], "--clientid") == 0)	// 设定clientid
 		{
 			if (++count < argc)
 				opts.clientid = argv[count];
 			else
 				usage();
 		}
-		else if (strcmp(argv[count], "--username") == 0)
+		else if (strcmp(argv[count], "--username") == 0)	// 设定 username
 		{
 			if (++count < argc)
 				opts.username = argv[count];
 			else
 				usage();
 		}
-		else if (strcmp(argv[count], "--password") == 0)
+		else if (strcmp(argv[count], "--password") == 0)	// 设定 password
 		{
 			if (++count < argc)
 				opts.password = argv[count];
 			else
 				usage();
 		}
-		else if (strcmp(argv[count], "--delimiter") == 0)
+		else if (strcmp(argv[count], "--delimiter") == 0)	// 设定分隔符
 		{
 			if (++count < argc)
 				opts.delimiter = argv[count];
 			else
 				opts.nodelimiter = 1;
 		}
-		else if (strcmp(argv[count], "--showtopics") == 0)
+		else if (strcmp(argv[count], "--showtopics") == 0)	// 设定是否显示参数
 		{
 			if (++count < argc)
 			{
@@ -203,14 +215,18 @@ int main(int argc, char** argv)
 	
 	char* topic = argv[1];
 
+	// 如果 topic 中包含 '#' 或者 '+' 才设置 showtopics = 1
 	if (strchr(topic, '#') || strchr(topic, '+'))
 		opts.showtopics = 1;
 	if (opts.showtopics)
 		printf("topic is %s\n", topic);
 
-	getopts(argc, argv);	
+	getopts(argc, argv);
 
+	// 代表网络连接的实例
+	// 此实例包含1）网络描述符my_socket；2）发送网络数据报的方法XXXread()；3）读取网络数据报的方法XXXwrite()
 	Network n;
+	// 代表客户端的实例
 	MQTTClient c;
 
 	signal(SIGINT, cfinish);
@@ -218,7 +234,7 @@ int main(int argc, char** argv)
 
 	NetworkInit(&n);
 	NetworkConnect(&n, opts.host, opts.port);
-	MQTTClientInit(&c, &n, 1000, buf, 100, readbuf, 100);
+	MQTTClientInit(&c, &n, 1000, buf, 100, readbuf, 100); // 命令间隔时间是1000ms
  
 	MQTTPacket_connectData data = MQTTPacket_connectData_initializer;       
 	data.willFlag = 0;
@@ -238,6 +254,7 @@ int main(int argc, char** argv)
 	rc = MQTTSubscribe(&c, topic, opts.qos, messageArrived);
 	printf("Subscribed %d\n", rc);
 
+	// 当 toStop == 1时，结束当前程序
 	while (!toStop)
 	{
 		MQTTYield(&c, 1000);	
