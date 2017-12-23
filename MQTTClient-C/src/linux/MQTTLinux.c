@@ -116,7 +116,7 @@ void NetworkInit(Network* n)
 }
 
 /**
- * 建立网络连接到指定的服务器IP地址和端口
+ * 建立网络连接到指定的服务器IP地址和端口，初始化套接字
  * @param  n    抽象化的代表网络套接字的实体
  * @param  addr 服务器地址，可以是 dev.sgw.m2m.rootcloud.com 也可以是 123.206.2.200
  * @param  port 服务器端口号

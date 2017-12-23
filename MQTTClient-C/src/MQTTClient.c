@@ -25,7 +25,11 @@ static void NewMessageData(MessageData* md, MQTTString* aTopicName, MQTTMessage*
     md->message = aMessage;
 }
 
-
+/**
+ * 返回MQTTClient下一个消息的ID，默认是自增1
+ * @param  c MQTTClient结构体对象指针
+ * @return   消息的ID
+ */
 static int getNextPacketId(MQTTClient *c) {
     return c->next_packetid = (c->next_packetid == MAX_PACKET_ID) ? 1 : c->next_packetid + 1;
 }
@@ -117,7 +121,12 @@ exit:
     return len;
 }
 
-
+/**
+ * 客户端读取一帧数据
+ * @param  c     MQTTClient 对象指针
+ * @param  timer 读取网络数据的超时时间
+ * @return       返回读取的帧类型
+ */
 static int readPacket(MQTTClient* c, Timer* timer)
 {
     MQTTHeader header = {0};
@@ -185,7 +194,13 @@ static char isTopicMatched(char* topicFilter, MQTTString* topicName)
     return (curn == curn_end) && (*curf == '\0');
 }
 
-
+/**
+ * 根据传入的主题/消息来执行注册的消息处理函数
+ * @param  c         MQTTClient结构体指针
+ * @param  topicName 接收到的主题
+ * @param  message   接收到的消息
+ * @return           返回 SUCCESS 表示执行了注册的消息处理函数或者默认的；返回 FAILURE 表示没有找到对应的消息处理函数切没有默认的消息处理函数
+ */
 int deliverMessage(MQTTClient* c, MQTTString* topicName, MQTTMessage* message)
 {
     int i;
@@ -218,7 +233,11 @@ int deliverMessage(MQTTClient* c, MQTTString* topicName, MQTTMessage* message)
     return rc;
 }
 
-
+/**
+ * 检测是否在线
+ * @param  c MQTTClient实例指针
+ * @return   返回 SUCCESS 表示在线；返回 FAILURE 表示掉线了
+ */
 int keepalive(MQTTClient* c)
 {
     int rc = SUCCESS;
@@ -246,6 +265,10 @@ exit:
 }
 
 
+/**
+ * 清除所有注册的 topicFilter
+ * @param c MQTTClient对象指针
+ */
 void MQTTCleanSession(MQTTClient* c)
 {
     int i = 0;
@@ -254,7 +277,10 @@ void MQTTCleanSession(MQTTClient* c)
         c->messageHandlers[i].topicFilter = NULL;
 }
 
-
+/**
+ * 改变状态变量，表示当前不再连接到服务器了，并且清除所有注册的 topicFilter
+ * @param c MQTTClient对象指针
+ */
 void MQTTCloseSession(MQTTClient* c)
 {
     c->ping_outstanding = 0;
@@ -264,6 +290,12 @@ void MQTTCloseSession(MQTTClient* c)
 }
 
 
+/**
+ * 周期性地工作中的一个过程，读一帧信息，并作出响应
+ * @param  c     MQTTClient实例指针
+ * @param  timer 一次读操作的超时时间
+ * @return       返回 SUCCESS 表示操作成功；返回 FAILURE 表示失败
+ */
 int cycle(MQTTClient* c, Timer* timer)
 {
     int len = 0,
@@ -294,7 +326,10 @@ int cycle(MQTTClient* c, Timer* timer)
                (unsigned char**)&msg.payload, (int*)&msg.payloadlen, c->readbuf, c->readbuf_size) != 1)
                 goto exit;
             msg.qos = (enum QoS)intQoS;
+
+            // 接收到服务器发送过来的PUBLISH消息，客户端需要进行对应的处理
             deliverMessage(c, &topicName, &msg);
+
             if (msg.qos != QOS0)
             {
                 if (msg.qos == QOS1)
@@ -347,7 +382,12 @@ exit:
     return rc;
 }
 
-
+/**
+ * 周期性的读取一帧信息并自动进行操作。
+ * @param  c          MQTTClient实例指针
+ * @param  timeout_ms 一次读操作的超时时间
+ * @return            返回 SUCCESS 表示操作成功；返回 FAILURE 表示失败
+ */
 int MQTTYield(MQTTClient* c, int timeout_ms)
 {
     int rc = SUCCESS;
@@ -470,7 +510,12 @@ exit:
     return rc;
 }
 
-
+/**
+ * 连接到远程服务器
+ * @param  c       客户端实例
+ * @param  options 连接参数
+ * @return         返回 SUCCESS 表示成功；返回 FAILURE 表示失败
+ */
 int MQTTConnect(MQTTClient* c, MQTTPacket_connectData* options)
 {
     MQTTConnackData data;

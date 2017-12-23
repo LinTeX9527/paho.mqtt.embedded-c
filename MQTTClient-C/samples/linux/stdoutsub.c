@@ -207,6 +207,7 @@ void messageArrived(MessageData* md)
 int main(int argc, char** argv)
 {
 	int rc = 0;
+	// 需要用户先分配缓冲区，然后挂载到MQTTClient对象上
 	unsigned char buf[100];
 	unsigned char readbuf[100];
 	
@@ -232,11 +233,14 @@ int main(int argc, char** argv)
 	signal(SIGINT, cfinish);
 	signal(SIGTERM, cfinish);
 
+	// 注册mqttread(), mqttwrite() 函数
 	NetworkInit(&n);
+	// 套接字连接上远程服务器的指定端口号
 	NetworkConnect(&n, opts.host, opts.port);
+	// 挂载网络实例到 MQTTClient 上，并且初始化缓冲区资源，客户端参数等信息
 	MQTTClientInit(&c, &n, 1000, buf, 100, readbuf, 100); // 命令间隔时间是1000ms
  
-	MQTTPacket_connectData data = MQTTPacket_connectData_initializer;       
+	MQTTPacket_connectData data = MQTTPacket_connectData_initializer;
 	data.willFlag = 0;
 	data.MQTTVersion = 3;
 	data.clientID.cstring = opts.clientid;
@@ -246,10 +250,11 @@ int main(int argc, char** argv)
 	data.keepAliveInterval = 10;
 	data.cleansession = 1;
 	printf("Connecting to %s %d\n", opts.host, opts.port);
-	
+
+	// 上面设置了 MQTTClient的各项参数，连接到服务器
 	rc = MQTTConnect(&c, &data);
 	printf("Connected %d\n", rc);
-    
+
     printf("Subscribing to %s\n", topic);
 	rc = MQTTSubscribe(&c, topic, opts.qos, messageArrived);
 	printf("Subscribed %d\n", rc);
@@ -257,9 +262,13 @@ int main(int argc, char** argv)
 	// 当 toStop == 1时，结束当前程序
 	while (!toStop)
 	{
-		MQTTYield(&c, 1000);	
+		// 在调用MQTTYield() 函数之前，应该做好订阅、发布的工作，然后开始进入周期性的读取服务器的消息过程中
+		// 多进程的操作不用那么复杂，只需要在这个 while 之前完成连接服务器、订阅主体、发布消息的动作，
+		// 就可以用MQTTYield() 定期地去处理服务器消息
+		// 周期性的读取一帧消息并做处理
+		MQTTYield(&c, 1000);
 	}
-	
+
 	printf("Stopping\n");
 
 	MQTTDisconnect(&c);

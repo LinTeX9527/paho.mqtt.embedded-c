@@ -96,23 +96,27 @@ typedef struct
 
 #define MQTTPacket_willOptions_initializer { {'M', 'Q', 'T', 'W'}, 0, {NULL, {0, NULL}}, {NULL, {0, NULL}}, 0, 0 }
 
-
+/**
+ * MQTTPacket_connectData 结构体
+ * 包含客户端第一次连接到服务器的信息
+ */
 typedef struct
 {
 	/** The eyecatcher for this structure.  must be MQTC. */
 	char struct_id[4];
 	/** The version number of this structure.  Must be 0 */
 	int struct_version;
-	/** Version of MQTT to be used.  3 = 3.1 4 = 3.1.1
-	  */
+	/** Version of MQTT to be used.  3 = 3.1 4 = 3.1.1 */
 	unsigned char MQTTVersion;
+	
 	MQTTString clientID;
-	unsigned short keepAliveInterval;
-	unsigned char cleansession;
-	unsigned char willFlag;
-	MQTTPacket_willOptions will;
-	MQTTString username;
-	MQTTString password;
+	
+	unsigned short keepAliveInterval; 	// 心跳包间隔时间，以秒为单位
+	unsigned char cleansession;			// 清除会话的标志
+	unsigned char willFlag;				// last will的标志
+	MQTTPacket_willOptions will;		// last will参数
+	MQTTString username;				// 用户名
+	MQTTString password;				// 密码
 } MQTTPacket_connectData;
 
 typedef union
